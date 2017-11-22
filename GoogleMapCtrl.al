@@ -1,6 +1,6 @@
 controladdin GoogleMapCtrl
 {
-    Scripts = 
+    Scripts =
         'https://maps.googleapis.com/maps/api/js',
         'scripts/googlemap.js';
     StartupScript = 'scripts/start.js';
@@ -15,7 +15,8 @@ controladdin GoogleMapCtrl
     HorizontalShrink = true;
     VerticalStretch = true;
     HorizontalStretch = true;
-
+    
     event ControlReady();
-    procedure ShowAddress(Address: Text);
+    event UpdateAddress(address: JsonObject);
+    procedure ShowAddress(Address: JsonObject);
 }

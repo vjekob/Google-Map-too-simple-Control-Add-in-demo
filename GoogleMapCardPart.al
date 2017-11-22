@@ -15,6 +15,16 @@ page 50121 GoogleMapCardPart
                     MapIsReady := true;
                     ShowAddress();
                 end;
+                
+                trigger UpdateAddress(address : JsonObject);
+                begin
+                    Rec.Address := GetJsonTokenValue(address, 'address');
+                    Rec."Post Code" := GetJsonTokenValue(address, 'zip');
+                    Rec.City := GetJsonTokenValue(address, 'city');
+                    Rec."Country/Region Code" := GetRegionCode(GetJsonTokenValue(address, 'region'));
+                    Rec.Modify();
+                    CurrPage.Update(false);
+                end;
             }
         }
     }
@@ -24,20 +34,37 @@ page 50121 GoogleMapCardPart
         
     local procedure ShowAddress();
     var
-        CustAddress: Text;
+        CustAddress: JsonObject;
     begin
         if not MapIsReady then
             exit;
-
-        CustAddress := Rec.Address;
+            
+        CustAddress.Add('address',Rec.Address);
         if Rec."Post Code" <> '' then
-            CustAddress += ', ' + Rec."Post Code";
+            CustAddress.Add('zip',Rec."Post Code");
         if Rec.City <> '' then
-            CustAddress += ', ' + Rec.City;
+            CustAddress.Add('city',Rec.City);
         if Rec."Country/Region Code" <> '' then
-            CustAddress += ', ' + Rec."Country/Region Code";
-
+            CustAddress.Add('region',Rec."Country/Region Code");
+            
         CurrPage.GoogleMap.ShowAddress(CustAddress);
+    end;
+    
+    local procedure GetJsonTokenValue(Json: JsonObject; Property: Text): Text;
+    var
+        Token: JsonToken;
+    begin
+        if Json.Get(Property,Token) then
+            exit(Token.AsValue().AsText());
+    end;
+
+    local procedure GetRegionCode(Region: Text): Code[10];
+    var
+        CountryRegion: Record "Country/Region";
+    begin
+        CountryRegion.SetFilter(Name, Region);
+        if CountryRegion.FindFirst() then
+            exit(CountryRegion.Code);
     end;
     
     trigger OnAfterGetRecord();

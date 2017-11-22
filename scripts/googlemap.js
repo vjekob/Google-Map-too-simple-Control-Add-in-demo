@@ -14,10 +14,40 @@ var ShowAddress = (function () {
     };
 
     function showAddress(address) {
-        geolocate(address, function (pos) {
+        var addressStr = address.address +
+            (address.zip && (", " + address.zip)) +
+            (address.city && (", " + address.city)) +
+            (address.region && (", " + address.region));
+
+        geolocate(addressStr, function (pos) {
             ctrlGoogleMap.panTo(pos);
         });
     };
 
     return showAddress;
 })();
+
+function UpdateAddress(latitude, longitude) {
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode(
+        { 'latLng': new google.maps.LatLng(latitude, longitude) },
+        function (results, status) {
+            if (status == google.maps.GeocoderStatus.OK) {
+                var geo = {};
+                results[0].address_components.forEach(function (comp) {
+                    comp.types.forEach(function (name) {
+                        geo[name] = comp.long_name;
+                    });
+                });
+
+                if (confirm("Update customer address to:\n\n" +
+                    results[0].formatted_address))
+                    Microsoft.Dynamics.NAV.InvokeExtensibilityMethod("UpdateAddress", [{
+                        address: (geo.street_number || '') + ' ' + (geo.route || ''),
+                        zip: geo.postal_code,
+                        city: geo.locality,
+                        region: geo.country
+                    }]);
+            };
+        });
+};
